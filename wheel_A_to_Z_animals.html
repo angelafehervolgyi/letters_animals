@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animal Quiz Game - A1 ESL</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            text-align: center;
+            padding: 20px;
+            background-color: #f4f4f9;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        #letter-wheel {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 5px;
+            margin-bottom: 25px;
+        }
+        .letter-button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: background-color 0.2s;
+            width: 40px; /* Egységes szélesség */
+            text-align: center;
+        }
+        .letter-button:hover:not(:disabled) {
+            background-color: #0056b3;
+        }
+        .letter-button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        #timer {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #dc3545;
+            margin-bottom: 20px;
+            border: 2px solid #dc3545;
+            padding: 10px;
+            border-radius: 5px;
+            display: inline-block;
+        }
+        #description-area {
+            min-height: 50px;
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #e9ecef;
+            font-style: italic;
+        }
+        #input-area {
+            margin-bottom: 20px;
+        }
+        #animal-input {
+            padding: 10px;
+            width: 70%;
+            border: 1px solid #ccc;
+            border-radius: 5px 0 0 5px;
+            box-sizing: border-box;
+            font-size: 1em;
+        }
+        .action-button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 0 5px 5px 0;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+        #submit-button {
+            background-color: #28a745;
+            color: white;
+        }
+        #submit-button:hover {
+            background-color: #1e7e34;
+        }
+        #pass-button {
+            background-color: #ffc107;
+            color: #333;
+            border-radius: 5px; /* A Pass gomb különálló */
+            margin-left: 10px;
+        }
+        #pass-button:hover {
+            background-color: #e0a800;
+        }
+        #score-board {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 25px;
+            padding: 10px;
+            border-top: 1px solid #ddd;
+        }
+        .score-item {
+            font-size: 1.1em;
+        }
+        .correct { color: #28a745; }
+        .incorrect { color: #dc3545; }
+        .passed { color: #ffc107; }
+
+        /* Játék vége üzenet */
+        #game-over-message {
+            font-size: 1.8em;
+            color: #dc3545;
+            font-weight: bold;
+            margin-top: 30px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Animal Guessing Game</h1>
+        <div id="timer">Time: 02:00</div>
+        
+        <div id="description-area">Click a letter to start!</div>
+
+        <div id="letter-wheel">
+            </div>
+        
+        <div id="input-area">
+            <input type="text" id="animal-input" placeholder="Type the animal name (in English)" disabled>
+            <button class="action-button" id="submit-button" disabled>Submit</button>
+            <button class="action-button" id="pass-button" disabled>Pass</button>
+        </div>
+
+        <div id="score-board">
+            <div class="score-item correct">Correct: <span id="correct-count">0</span></div>
+            <div class="score-item incorrect">Incorrect: <span id="incorrect-count">0</span></div>
+            <div class="score-item passed">Passed: <span id="passed-count">0</span></div>
+        </div>
+
+        <div id="game-over-message">Game Over!</div>
+    </div>
+
+    <script>
+        // A1-es szintű állatleírások (rövidített lista bemutatásra)
+        const animalData = {
+            A: { name: "Ant", description: "This is a very small insect. It is black or red. It lives in a big group on the ground." },
+            B: { name: "Bear", description: "This is a big, strong animal. It likes to eat fish and honey. It often sleeps a lot in winter." },
+            C: { name: "Cat", description: "This is a small pet animal. It has soft fur and a long tail. It says 'meow'." },
+            D: { name: "Dog", description: "This is a pet animal. It likes to play with people. It says 'woof'." },
+            E: { name: "Elephant", description: "This is a very big, grey animal. It has a long nose called a trunk and big ears." },
+            F: { name: "Fish", description: "This animal lives in the water. It can swim and has fins. We can keep it in a tank." },
+            G: { name: "Giraffe", description: "This is a very tall animal. It has a very long neck. It eats leaves from trees." },
+            H: { name: "Horse", description: "This is a big farm animal. People can ride it. It eats grass." },
+            I: { name: "Iguana", description: "This is a large lizard. It is often green. It likes warm places." },
+            J: { name: "Jellyfish", description: "This animal lives in the sea. It is soft and has no bones. Be careful, it can sting!" },
+            K: { name: "Kangaroo", description: "This animal lives in Australia. It has a big tail and strong legs. It jumps high." },
+            L: { name: "Lion", description: "This is a big cat. The male has a lot of hair on its neck. It is called the 'king of the jungle'." },
+            M: { name: "Monkey", description: "This animal likes to climb trees. It is smart and likes to eat bananas." },
+            N: { name: "Narwhal", description: "This is a whale. It lives in the sea and has a long, pointed horn on its head." },
+            O: { name: "Owl", description: "This bird sleeps in the day and flies at night. It says 'hoo-hoo'." },
+            P: { name: "Penguin", description: "This is a black and white bird. It lives in cold places and can swim very well, but it cannot fly." },
+            Q: { name: "Quail", description: "This is a small bird. It likes to walk and look for seeds on the ground." },
+            R: { name: "Rabbit", description: "This is a small animal with long ears. It likes to eat carrots and jumps a little." },
+            S: { name: "Snake", description: "This is a long animal with no legs. It crawls on the ground. Some are dangerous." },
+            T: { name: "Tiger", description: "This is a big cat with black and orange stripes. It is a very good hunter." },
+            U: { name: "Urial", description: "This is a wild sheep. It has big, curly horns. It lives on mountains." },
+            V: { name: "Vulture", description: "This is a large bird. It eats dead animals. It has no feathers on its head." },
+            W: { name: "Whale", description: "This is a very, very big animal. It lives in the sea. It is not a fish." },
+            X: { name: "Xerus", description: "This is a small animal, like a squirrel. It lives in Africa and digs holes in the ground." },
+            Y: { name: "Yak", description: "This is a big animal from the mountains. It has very long, thick hair to keep warm." },
+            Z: { name: "Zebra", description: "This animal is like a horse, but it has black and white stripes on its body." }
+        };
+
+        const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        let currentLetter = null;
+        let timerInterval;
+        let timeLeft = 120; // 2 perc másodpercben (120 másodperc)
+        let scores = { correct: 0, incorrect: 0, passed: 0 };
+        let answeredLetters = new Set(); // A már megválaszolt/passzolt betűk követése
+
+        const elements = {
+            wheel: document.getElementById('letter-wheel'),
+            description: document.getElementById('description-area'),
+            input: document.getElementById('animal-input'),
+            submit: document.getElementById('submit-button'),
+            pass: document.getElementById('pass-button'),
+            timer: document.getElementById('timer'),
+            correctCount: document.getElementById('correct-count'),
+            incorrectCount: document.getElementById('incorrect-count'),
+            passedCount: document.getElementById('passed-count'),
+            gameOver: document.getElementById('game-over-message')
+        };
+
+        // 1. Betűkerék generálása
+        function generateLetterWheel() {
+            elements.wheel.innerHTML = '';
+            for (const letter of alphabet) {
+                const button = document.createElement('button');
+                button.className = 'letter-button';
+                button.textContent = letter;
+                button.onclick = () => loadAnimal(letter);
+                elements.wheel.appendChild(button);
+                if (answeredLetters.has(letter)) {
+                    button.disabled = true;
+                }
+            }
+        }
+
+        // 2. Állat betöltése
+        function loadAnimal(letter) {
+            if (currentLetter === letter) return; // Ne töltsük újra, ha már ez van kiválasztva
+            if (answeredLetters.has(letter)) return;
+
+            // Indítsa el a visszaszámlálót az első kattintáskor
+            if (currentLetter === null) {
+                startTimer();
+                elements.input.disabled = false;
+                elements.submit.disabled = false;
+                elements.pass.disabled = false;
+            }
+
+            currentLetter = letter;
+            elements.input.value = ''; // Bemeneti mező törlése
+            elements.description.textContent = animalData[letter] ? animalData[letter].description : `No animal for '${letter}' yet. Pass this one.`;
+            elements.input.focus();
+        }
+
+        // 3. Visszaszámláló
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    endGame();
+                    return;
+                }
+                timeLeft--;
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                elements.timer.textContent = `Time: ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        // 4. Passz funkció
+        function handlePass() {
+            if (!currentLetter || answeredLetters.has(currentLetter)) return;
+
+            scores.passed++;
+            answeredLetters.add(currentLetter);
+            updateScores();
+            disableCurrentLetterButton(currentLetter);
+            
+            // Következő betű betöltése (egyszerűen a következő a listában)
+            const currentIndex = alphabet.indexOf(currentLetter);
+            let nextLetter = null;
+            for (let i = 1; i < alphabet.length; i++) {
+                const nextIndex = (currentIndex + i) % alphabet.length;
+                const potentialNext = alphabet[nextIndex];
+                if (!answeredLetters.has(potentialNext)) {
+                    nextLetter = potentialNext;
+                    break;
+                }
+            }
+
+            if (nextLetter) {
+                loadAnimal(nextLetter);
+            } else {
+                elements.description.textContent = "All letters used or passed! Wait for the time to end.";
+                currentLetter = null;
+            }
+        }
+
+        // 5. Válasz beküldése
+        function handleSubmit() {
+            if (!currentLetter) return;
+
+            const userAnswer = elements.input.value.trim().toLowerCase();
+            const correctName = animalData[currentLetter].name.toLowerCase();
+
+            if (userAnswer === correctName) {
+                scores.correct++;
+                elements.description.textContent = `Correct! It is a ${animalData[currentLetter].name}. Click a new letter!`;
+            } else {
+                scores.incorrect++;
+                elements.description.textContent = `Incorrect. The answer was ${animalData[currentLetter].name}. Click a new letter!`;
+            }
+
+            answeredLetters.add(currentLetter);
+            updateScores();
+            disableCurrentLetterButton(currentLetter);
+            currentLetter = null;
+            elements.input.value = '';
+        }
+
+        // 6. Pontszámok frissítése
+        function updateScores() {
+            elements.correctCount.textContent = scores.correct;
+            elements.incorrectCount.textContent = scores.incorrect;
+            elements.passedCount.textContent = scores.passed;
+        }
+
+        // 7. Gomb letiltása
+        function disableCurrentLetterButton(letter) {
+            const buttons = elements.wheel.querySelectorAll('.letter-button');
+            buttons.forEach(button => {
+                if (button.textContent === letter) {
+                    button.disabled = true;
+                }
+            });
+        }
+
+        // 8. Játék vége
+        function endGame() {
+            elements.gameOver.style.display = 'block';
+            elements.description.textContent = `Game Over! Your final score: ${scores.correct} correct, ${scores.incorrect} incorrect, and ${scores.passed} passed.`;
+            elements.input.disabled = true;
+            elements.submit.disabled = true;
+            elements.pass.disabled = true;
+            
+            // Összes betű gomb letiltása
+            elements.wheel.querySelectorAll('.letter-button').forEach(button => {
+                button.disabled = true;
+            });
+        }
+        
+        // Eseménykezelők hozzáadása
+        elements.pass.addEventListener('click', handlePass);
+        elements.submit.addEventListener('click', handleSubmit);
+        elements.input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleSubmit();
+            }
+        });
+
+        // Játék indítása
+        generateLetterWheel();
+
+    </script>
+</body>
+</html>
